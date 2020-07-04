@@ -22,9 +22,9 @@ jobs:
       addons:
         apt:
           packages:
-            - build-essential
-            - cmake
-            - ninja
+            - p7zip-full
+            - zip
+            - unzip          
       before_script:
         - cd $TRAVIS_BUILD_DIR
         - git clone https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 && cd aarch64-linux-android-4.9
