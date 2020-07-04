@@ -1,0 +1,50 @@
+language: c
+compiler: gcc
+env:
+  global:
+    - CROSS_COMPILE=$TRAVIS_BUILD_DIR/aarch64-linux-android-4.9/bin/aarch64-linux-android-
+    - ARCH=arm64
+    - SUBARCH=arm64
+git:
+  depth: 50
+  submodules: true
+branches:
+  except:
+    - # Do not build tags that we create when we upload to GitHub Releases
+    - /^(?i:continuous.*)$/
+jobs:
+  include:
+    - stage: build
+      name: "Build for ARM64"
+      cache: ccache
+      os: linux
+      dist: xenial
+      addons:
+        apt:
+          packages:
+            - build-essential
+            - cmake
+            - ninja
+      before_script:
+        - cd $TRAVIS_BUILD_DIR
+        - git clone https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 && cd aarch64-linux-android-4.9
+        - git checkout 3b22ca783d1accb34446a5c9b5d84a8b37cb6543
+        - mv bin/921d9846-a815-11e9-84ea-ff8bce1b90b6-broken bin/aarch64-linux-android-gcc && mv bin/db96eedc-a815-11e9-a708-d79346614c9b-broken bin/aarch64-linux-android-g++
+      script:
+        - cd $TRAVIS_BUILD_DIR
+        - make mrproper
+        - make clean
+        - make O=out/ gm8_sprout_dual_halium_defconfig
+        - make O=out/ -j8
+        - make O=out/ modules
+        - make O=out/ INSTALL_MOD_PATH=libs modules_install
+      after_script:
+        - ls out/arch/arm64/boot/Image* && find out/libs/lib/modules/*/kernel
+      after_success:
+        - export GITHUB_TOKEN=$GH_TOKEN
+        - cd $TRAVIS_BUILD_DIR      
+        - 7z a -t7z -m0=lzma -mx=9 -mfb=64 -md=32m -ms=off kernel_$TRAVIS_BUILD_ID.7z out/arch/arm64/boot/Image*
+        - 7z a -t7z -m0=lzma -mx=9 -mfb=64 -md=32m -ms=off modules_$TRAVIS_BUILD_ID.7z out/libs/lib/modules/*/kernel
+        - wget -c https://github.com/FWGS/uploadtool/raw/master/upload.sh
+        - bash upload.sh kernel_$TRAVIS_BUILD_ID.7z
+        - bash upload.sh modules_$TRAVIS_BUILD_ID.7z        
