@@ -5,7 +5,7 @@ env:
     - CROSS_COMPILE=$TRAVIS_BUILD_DIR/aarch64-linux-android-4.9/bin/aarch64-linux-android-
     - ARCH=arm64
     - SUBARCH=arm64
-    - UPLOADTOOL_SUFFIX=halium
+    - UPLOADTOOL_SUFFIX=halium-included-modules
 git:
   depth: 50
   submodules: true
@@ -37,14 +37,14 @@ jobs:
         - make clean
         - make O=out/ gm8_sprout_dual_halium_defconfig
         - make O=out/ -j8
-        - make O=out/ modules
-        - make O=out/ INSTALL_MOD_PATH=libs modules_install
+        # - make O=out/ modules
+        # - make O=out/ INSTALL_MOD_PATH=libs modules_install
       after_script:
-        - ls out/arch/arm64/boot/Image* && find out/libs/lib/modules/*/kernel
+        - ls out/arch/arm64/boot/Image*
       after_success:
         - export GITHUB_TOKEN=$GH_TOKEN
         - cd $TRAVIS_BUILD_DIR      
         - 7z a -t7z -m0=lzma -mx=9 -mfb=64 -md=32m -ms=off kernel_halium_$TRAVIS_BUILD_ID.7z out/arch/arm64/boot/Image*
-        - 7z a -t7z -m0=lzma -mx=9 -mfb=64 -md=32m -ms=off modules_halium_$TRAVIS_BUILD_ID.7z out/libs/lib/modules/*/kernel
+        # - 7z a -t7z -m0=lzma -mx=9 -mfb=64 -md=32m -ms=off modules_halium_$TRAVIS_BUILD_ID.7z out/libs/lib/modules/*/kernel
         - wget -c https://github.com/FWGS/uploadtool/raw/master/upload.sh
         - bash upload.sh *.7z
